@@ -12,18 +12,22 @@
 #include <stdexcept>
 #include <map>
 
-template<class KeyType, class ValueType, class Hash = std::hash<KeyType> >
+constexpr int NO_ELEMENT = -1;
+
+template<class KeyType, class ValueType, class Hash = std::hash<KeyType>>
 class HashMap {
 public:
     struct Node {
         std::pair<const KeyType, ValueType> element;
         size_t dist;
         size_t index;
-        Node* prev = nullptr, *next = nullptr;
+        Node *prev = nullptr, *next = nullptr;
 
         Node() = default;
 
-        Node(std::pair<const KeyType, ValueType> element_, size_t dist_ = 0, size_t index_ = 0) : element(element_), dist(dist_), index(index_) {}
+        Node(std::pair<const KeyType, ValueType> element_, size_t dist_ = 0, size_t index_ = 0) : element(element_),
+                                                                                                  dist(dist_),
+                                                                                                  index(index_) {}
 
         ~Node() {
         }
@@ -31,21 +35,21 @@ public:
 
     class const_iterator {
     public:
-        explicit const_iterator(const Node* pointer) {
+        explicit const_iterator(const Node *pointer) {
           current_ = pointer;
         }
 
         const_iterator() = default;
 
-        const std::pair<const KeyType, ValueType>& operator*() const {
+        const std::pair<const KeyType, ValueType> &operator*() const {
           return current_->element;
         }
 
-        const std::pair<const KeyType, ValueType>* operator->() const {
+        const std::pair<const KeyType, ValueType> *operator->() const {
           return &(current_->element);
         }
 
-        const_iterator& operator++() {
+        const_iterator &operator++() {
           current_ = current_->next;
           return *this;
         }
@@ -56,35 +60,35 @@ public:
           return now;
         }
 
-        bool operator==(const const_iterator& other) const {
+        bool operator==(const const_iterator &other) const {
           return current_ == other.current_;
         }
 
-        bool operator!=(const const_iterator& other) const {
+        bool operator!=(const const_iterator &other) const {
           return current_ != other.current_;
         }
 
     private:
-        const Node* current_;
+        const Node *current_;
     };
 
     class iterator {
     public:
-        explicit iterator(Node* pointer) {
+        explicit iterator(Node *pointer) {
           current_ = pointer;
         }
 
         iterator() = default;
 
-        std::pair<const KeyType, ValueType>& operator*() const {
+        std::pair<const KeyType, ValueType> &operator*() const {
           return current_->element;
         }
 
-        std::pair<const KeyType, ValueType>* operator->() const {
+        std::pair<const KeyType, ValueType> *operator->() const {
           return &(current_->element);
         }
 
-        iterator& operator++() {
+        iterator &operator++() {
           current_ = current_->next;
           return *this;
         }
@@ -95,15 +99,16 @@ public:
           return now;
         }
 
-        bool operator==(const iterator& other) const {
+        bool operator==(const iterator &other) const {
           return current_ == other.current_;
         }
 
-        bool operator!=(const iterator& other) const {
+        bool operator!=(const iterator &other) const {
           return current_ != other.current_;
         }
+
     private:
-        Node* current_;
+        Node *current_;
     };
 
     const_iterator begin() const {
@@ -158,7 +163,7 @@ public:
       size_ = 0;
       capacity_ = 1;
       link_.resize(capacity_);
-      for (auto x : lst) {
+      for (auto x: lst) {
         insert(x);
       }
     }
@@ -171,14 +176,14 @@ public:
       last_ = nullptr;
     }
 
-    HashMap(const HashMap& other) : hasher_(other.hasher_) {
+    HashMap(const HashMap &other) : hasher_(other.hasher_) {
       first_ = nullptr;
       last_ = nullptr;
       *this = other;
     }
 
     ~HashMap() {
-      Node* cur = first_;
+      Node *cur = first_;
       if (cur != nullptr) {
         while (cur->next != nullptr) {
           cur = cur->next;
@@ -194,7 +199,7 @@ public:
     }
 
     void clear() {
-      Node* cur = first_;
+      Node *cur = first_;
       if (cur != nullptr) {
         while (cur->next != nullptr) {
           cur = cur->next;
@@ -257,7 +262,7 @@ public:
       return iterator(end());
     }
 
-    void insert_inside(Node* add) {
+    void insert_inside(Node *add) {
       size_t start_bucket = hasher_(add->element.first) % capacity_;
       if (size_ == 0) {
         first_ = add;
@@ -271,8 +276,8 @@ public:
       last_->prev = add;
       add->next = last_;
 
-      int first_index = -1;
-      for (size_t i = start_bucket, active_dist = 0; ; ++i, ++active_dist, ++(last_->dist)) {
+      int first_index = NO_ELEMENT;
+      for (size_t i = start_bucket, active_dist = 0;; ++i, ++active_dist, ++(last_->dist)) {
         if (i == capacity_) {
           i = 0;
         }
@@ -284,7 +289,7 @@ public:
         } else {
           size_t cur_dist = link_[i]->dist;
           if (cur_dist < active_dist) {
-            if (first_index == -1) {
+            if (first_index == NO_ELEMENT) {
               first_index = static_cast<int>(i);
             }
             last_->index = i;
@@ -292,17 +297,17 @@ public:
           }
         }
       }
-      if (first_index != -1) {
+      if (first_index != NO_ELEMENT) {
         last_ = link_[first_index];
       }
     }
 
-    void insert(std::pair <const KeyType, ValueType> element) {
+    void insert(std::pair<const KeyType, ValueType> element) {
       if (size_ > 0 && find(element.first) != end()) {
         return;
       }
       size_t start_bucket = hasher_(element.first) % capacity_;
-      Node* add = new Node(element, 0, 0);
+      Node *add = new Node(element, 0, 0);
       if (size_ == 0) {
         first_ = add;
         last_ = add;
@@ -312,9 +317,9 @@ public:
         if (size_ * 2 >= capacity_) {
           size_ = 0;
           capacity_ *= 2;
-          std::vector<Node*> who;
-          link_ = std::vector<Node*>(capacity_);
-          Node* cur = first_;
+          std::vector<Node *> who;
+          link_ = std::vector<Node *>(capacity_);
+          Node *cur = first_;
           if (cur != nullptr) {
             while (cur != nullptr) {
               cur->dist = 0;
@@ -322,7 +327,7 @@ public:
               cur = cur->next;
             }
           }
-          for (auto x : who) {
+          for (auto x: who) {
             insert_inside(x);
           }
         }
@@ -332,24 +337,24 @@ public:
       last_->prev = add;
       add->next = last_;
 
-      int first_index = -1;
-      for (size_t i = start_bucket, active_dist = 0; ; ++i, ++active_dist, ++(last_->dist)) {
+      int first_index = NO_ELEMENT;
+      for (size_t i = start_bucket, active_dist = 0;; ++i, ++active_dist, ++(last_->dist)) {
         if (i == capacity_) {
           i = 0;
         }
         if (link_[i] == nullptr) {
           last_->index = i;
           link_[i] = last_;
-          if (first_index != -1) {
+          if (first_index != NO_ELEMENT) {
             last_ = link_[first_index];
           }
           ++size_;
           if (size_ * 2 >= capacity_) {
             size_ = 0;
             capacity_ *= 2;
-            std::vector<Node*> who;
-            link_ = std::vector<Node*>(capacity_);
-            Node* cur = first_;
+            std::vector<Node *> who;
+            link_ = std::vector<Node *>(capacity_);
+            Node *cur = first_;
             if (cur != nullptr) {
               while (cur != nullptr) {
                 cur->dist = 0;
@@ -357,7 +362,7 @@ public:
                 cur = cur->next;
               }
             }
-            for (auto x : who) {
+            for (auto x: who) {
               insert_inside(x);
             }
             return;
@@ -366,7 +371,7 @@ public:
         } else {
           size_t cur_dist = link_[i]->dist;
           if (cur_dist < active_dist) {
-            if (first_index == -1) {
+            if (first_index == NO_ELEMENT) {
               first_index = static_cast<int>(i);
             }
             last_->index = i;
@@ -374,7 +379,7 @@ public:
           }
         }
       }
-      if (first_index != -1) {
+      if (first_index != NO_ELEMENT) {
         last_ = link_[first_index];
       }
     }
@@ -430,7 +435,7 @@ public:
           break;
         }
       }
-      for (size_t i = pos + 1; ; ++i) {
+      for (size_t i = pos + 1;; ++i) {
         if (i >= capacity_) {
           i -= capacity_;
         }
@@ -443,19 +448,19 @@ public:
         }
         link_[i]->index = prev;
         std::swap(link_[i], link_[prev]);
-        link_[prev]->dist -= 1;
+        link_[prev]->dist--;
       }
     }
 
-    HashMap& operator=(const HashMap& other) {
+    HashMap &operator=(const HashMap &other) {
       if (this == &other) {
         return *this;
       }
       hasher_ = other.hasher_;
       capacity_ = other.capacity_;
       size_ = other.size_;
-      link_ = std::vector<Node*>(other.capacity_);
-      Node* cur = other.first_;
+      link_ = std::vector<Node *>(other.capacity_);
+      Node *cur = other.first_;
       if (cur != nullptr) {
         while (cur != nullptr) {
           auto x = new Node(cur->element, cur->dist, cur->index);
@@ -473,7 +478,7 @@ public:
       return *this;
     }
 
-    ValueType& operator[](const KeyType& key) {
+    ValueType &operator[](const KeyType &key) {
       auto it = find(key);
       if (it == end()) {
         std::pair<const KeyType, ValueType> el(std::make_pair(key, ValueType()));
@@ -483,7 +488,7 @@ public:
       return it->second;
     }
 
-    const ValueType& at(KeyType key) const {
+    const ValueType &at(KeyType key) const {
       auto it = find(key);
       if (it == end()) {
         throw std::out_of_range("out_of_range");
@@ -500,9 +505,9 @@ public:
     }
 
 private:
-    std::vector<Node*> link_;
-    Node* first_;
-    Node* last_;
+    std::vector<Node *> link_;
+    Node *first_;
+    Node *last_;
     Hash hasher_;
 
     size_t size_;

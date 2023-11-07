@@ -16,16 +16,20 @@ void fail(const char *message) {
 struct StrangeInt {
     int x;
     static int counter;
+
     StrangeInt() {
       ++counter;
     }
-    StrangeInt(int x): x(x) {
+
+    StrangeInt(int x) : x(x) {
       ++counter;
     }
-    StrangeInt(const StrangeInt& rs): x(rs.x) {
+
+    StrangeInt(const StrangeInt &rs) : x(rs.x) {
       ++counter;
     }
-    bool operator ==(const StrangeInt& rs) const {
+
+    bool operator==(const StrangeInt &rs) const {
       return x == rs.x;
     }
 
@@ -37,16 +41,18 @@ struct StrangeInt {
       --counter;
     }
 
-    friend std::ostream& operator <<(std::ostream& out, const StrangeInt& x) {
+    friend std::ostream &operator<<(std::ostream &out, const StrangeInt &x) {
       out << x.x;
       return out;
     }
 };
+
 int StrangeInt::counter;
 
 namespace std {
-    template<> struct hash<StrangeInt> {
-        size_t operator()(const StrangeInt& x) const {
+    template<>
+    struct hash<StrangeInt> {
+        size_t operator()(const StrangeInt &x) const {
           return x.x;
         }
     };
@@ -57,7 +63,9 @@ namespace internal_tests {
 /* check that hash_map provides correct interface
  * in terms of constness */
     void const_check() {
-      const HashMap<int, int> map{{1, 5}, {3, 4}, {2, 1}};
+      const HashMap<int, int> map{{1, 5},
+                                  {3, 4},
+                                  {2, 1}};
       std::cerr << "check constness\n";
       if (map.empty())
         fail("incorrect empty method");
@@ -84,13 +92,15 @@ namespace internal_tests {
 
 /* check that 'at' raises std::out_of_range */
     void exception_check() {
-      const HashMap<int, int> map{{2, 3}, {-7, -13}, {0, 8}};
+      const HashMap<int, int> map{{2,  3},
+                                  {-7, -13},
+                                  {0,  8}};
       std::cerr << "check exception...\n";
       try {
         auto cur = map.at(8);
         std::cerr << cur << "\n";
       }
-      catch (const std::out_of_range& e) {
+      catch (const std::out_of_range &e) {
         std::cerr << "ok!\n";
         return;
       }
@@ -142,7 +152,10 @@ namespace internal_tests {
 
 /* check operator [] for reference correctness */
     void reference_check() {
-      HashMap<int, int> map{{3, 4}, {3, 5}, {4, 7}, {-1, -3}};
+      HashMap<int, int> map{{3,  4},
+                            {3,  5},
+                            {4,  7},
+                            {-1, -3}};
       std::cerr << "check references... ";
       map[3] = 7;
       if (map[3] != 7 || map[0] != 0)
@@ -166,17 +179,18 @@ namespace internal_tests {
       std::cerr << "check hash functions\n";
       struct Hasher {
           std::hash<std::string> hasher;
-          size_t operator()(const std::string& s) const {
+
+          size_t operator()(const std::string &s) const {
             return hasher(s);
           }
       };
 
       HashMap<std::string, std::string, Hasher> map{
-              {"aba", "caba"},
+              {"aba",    "caba"},
               {"simple", "case"},
-              {"test", "test"}
+              {"test",   "test"}
       };
-      for (auto cur : map)
+      for (auto cur: map)
         std::cerr << cur.first << " " << cur.second << "\n";
       auto simple_hash = [](unsigned long long x) -> size_t {
           return x % 17239;
@@ -195,12 +209,12 @@ namespace internal_tests {
       if (second_map[0] != "a" || second_map[17239] != "check")
         fail("incorrect insert or [ ]");
 
-      for (auto cur : second_map)
+      for (auto cur: second_map)
         std::cerr << cur.first << " " << cur.second << "\n";
 
       HashMap<int, int, std::function<size_t(int)>> stupid_map(stupid_hash);
       auto stupid_hash_fn = stupid_map.hash_function();
-      for(int i = 0; i < 1000; ++i) {
+      for (int i = 0; i < 1000; ++i) {
         stupid_map[i] = i + 1;
         if (stupid_hash_fn(i))
           fail("wrong hash function in class");
@@ -287,10 +301,10 @@ namespace internal_tests {
 
 void assert_map_equal(HashMap<int, int> map, std::unordered_map<int, int> orig_map) {
   std::vector<std::pair<int, int>> vec1, vec2;
-  for(auto it = map.begin(); it != map.end(); ++it) {
+  for (auto it = map.begin(); it != map.end(); ++it) {
     vec1.push_back({it->first, it->second});
   }
-  for(auto it = orig_map.begin(); it != orig_map.end(); ++it) {
+  for (auto it = orig_map.begin(); it != orig_map.end(); ++it) {
     vec2.push_back({it->first, it->second});
   }
   std::sort(vec1.begin(), vec1.end());
@@ -299,38 +313,4 @@ void assert_map_equal(HashMap<int, int> map, std::unordered_map<int, int> orig_m
   for (int i = 0; i < vec1.size(); ++i) {
     assert(vec1[i] == vec2[i]);
   }
-}
-
-int main() {
-  internal_tests::run_all();
-
-  HashMap<int, int> map;
-  using HashMapIterator = HashMap<int, int>::iterator;
-  int n;
-  std::cin >> n;
-  for (int i = 0; i < n; ++i) {
-    char code;
-    int key;
-    std::cin >> code;
-    if (code != '!' && code != '<')
-      std::cin >> key;
-    if (code == '-')
-      map.erase(key);
-    else if (code == '?') {
-      auto it = map.find(key);
-      std::cout << (it == map.end() ? -1 : it->second) << "\n";
-    } else if (code == '+') {
-      int val;
-      std::cin >> val;
-
-      map[key] = val;
-    } else if (code == '<') {
-      for(HashMapIterator it = map.begin(); it != map.end(); ++it)
-        std::cout << it->first << " " << it->second << "\n";
-    } else if (code == '!')
-      map.clear();
-  }
-
-  std::cout << map.size() << "\n";
-  return 0;
 }
